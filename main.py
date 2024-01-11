@@ -14,11 +14,9 @@ def get_storage_capacity(description_text: str) -> str:
     final_phrase = ""
     for phrase in phrases: 
         if phrase.find("GB") != -1 and len(phrase) > 3 and phrase.find("GTX") == -1 and phrase.find("TB") == -1 and phrase.find("Radeon") == -1 and phrase.find("GeForce") == -1 and phrase.find("RGB") == -1:
-            # print(phrase.strip()) 
             final_phrase = phrase.strip()
 
         if phrase.find("TB") != -1:
-            # print(phrase.strip()) 
             final_phrase = phrase.strip()
     return final_phrase
 
@@ -30,11 +28,7 @@ url = "https://webscraper.io/test-sites/e-commerce/more/computers/laptops"
 # initiating the webdriver. Parameter includes the path of the webdriver. 
 driver = webdriver.Chrome()  
 driver.get(url)  
-wait = WebDriverWait(driver, 1)
-  
-# this is just to ensure that the page is loaded 
-# time.sleep(5)  
-
+wait = WebDriverWait(driver, 1) 
 wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/div[1]/div[3]/div/div[2]/a')))
 
 # running until meet stop condition
@@ -49,6 +43,7 @@ while True:
     displayed = load_more.get_attribute("style")
     if "none" in displayed:
         time.sleep(4) # time sleep to make sure the page is loaded
+
         html = driver.page_source 
         soup = BeautifulSoup(html, "html.parser") 
         all_divs = soup.find('div', {'class' : 'row ecomerce-items ecomerce-items-more'}) 
