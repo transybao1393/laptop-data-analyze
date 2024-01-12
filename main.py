@@ -17,7 +17,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import cm
 from reportlab.platypus.paragraph import Paragraph
 
-def to_pdf(most_expensive: pd.DataFrame, most_review: pd.DataFrame):
+def to_pdf(df: pd.DataFrame, most_expensive: pd.DataFrame, most_review: pd.DataFrame, average_storage_capacity: float):
     try:
         # styling        
         table_style = TableStyle([
@@ -26,17 +26,23 @@ def to_pdf(most_expensive: pd.DataFrame, most_review: pd.DataFrame):
         )
 
         # build table
+        df_table = Table(np.array(df).tolist())
+        
         most_expensive_table = Table(np.array(most_expensive).tolist())
         most_review_table = Table(np.array(most_review).tolist())
         most_expensive_table.setStyle(table_style)
         most_review_table.setStyle(table_style)
+        df_table.setStyle(table_style)
         
         # add to elements array
         elements = []
+        elements.append(Paragraph("All"))
+        elements.append(df_table)
         elements.append(Paragraph("Most expensive"))
         elements.append(most_expensive_table)
         elements.append(Paragraph("Most review"))
         elements.append(most_review_table)
+        elements.append(Paragraph("Average storage capacity of all scraped laptops: " + str(average_storage_capacity) + "GB"))
 
         doc = SimpleDocTemplate("laptop_info.pdf", pagesize=A4)
         doc.build(elements)
@@ -50,10 +56,32 @@ def get_storage_capacity(description_text: str) -> str:
         phrases = description_text.split(", ")
         final_phrase = ""
         for phrase in phrases: 
-            if phrase.find("GB") != -1 and len(phrase) > 3 and phrase.find("GTX") == -1 and phrase.find("TB") == -1 and phrase.find("Radeon") == -1 and phrase.find("GeForce") == -1 and phrase.find("RGB") == -1:
-                final_phrase = phrase.strip()
+            if phrase.find("GB") != -1 and len(phrase) > 3 and phrase.find("GTX") == -1 and phrase.find("TB") == -1 and phrase.find("Radeon") == -1 and phrase.find("GeForce") == -1 and phrase.find("RGB") == -1 and phrase.find("AMD") == -1:
+                # check if it is plus
+                if phrase.find("+") != -1:
+                    multi_storage = phrase.split("+")
+                    # return "GB+" + phrase
+                    return str(
+                        sum(
+                            [
+                                int(storage.split("GB")[0].strip()) 
+                                for storage in multi_storage
+                            ]
+                        )
+                    )
+                   
+                final_phrase = phrase.split("GB")[0].strip()
+
             if phrase.find("TB") != -1:
-                final_phrase = phrase.strip()
+                if phrase.find("+") != -1:
+                    multi_storage = phrase.split("+")
+                    if multi_storage[0].find("TB") != -1 and multi_storage[1].find("GB") != -1: 
+                        return str(int(multi_storage[0].split("TB")[0].strip()) * 1000 + int(multi_storage[1].split("GB")[0].strip()))
+                    
+                    if multi_storage[0].find("GB") != -1 and multi_storage[1].find("TB") != -1: 
+                        return str(int(multi_storage[0].split("GB")[0].strip()) + int(multi_storage[1].split("TB")[0].strip()) * 1000)
+                
+                final_phrase = str(int(phrase.split("TB")[0].strip()) * 1000) # convert to GB
         return final_phrase
     except Exception as e:
         print("Error when getting storage capacity")
@@ -95,25 +123,29 @@ while True:
                 {
                     "title": card_body.a.get_text(strip=True),
                     "price": float(card_body.h4.get_text(strip=True)[1:]), # should handle exception here
-                    "storage_capacity": get_storage_capacity(card_body.p.get_text(strip=True)),
-                    "review": int(card_body.find("p", {"class": "review-count"}).get_text(strip=True)[0]) # get the number only from string "x reviews"
+                    "storage_capacity": int(get_storage_capacity(card_body.p.get_text(strip=True)) or '0'),
+                    "review": int(card_body.find("p", {"class": "float-end review-count pull-right"}).get_text(strip=True).split(" ")[0]) # get the number only from string "x reviews"
                 }
                 for card_body in card_bodies
             ]
         }
        
 
-        print("result type", type(result))
-
         # build dataframe from dict and getting max price and review laptop information
         df = pd.DataFrame(result['laptops'])
         print(df)
+        print("len(result['laptops'])", len(result['laptops']))
         most_expensive = df[df['price']==df['price'].max()]
         most_review = df[df['review']==df['review'].max()]
         print("\nlaptop with max price\n", df[df['price']==df['price'].max()])
         print("\nlaptop has max review\n", df[df['review']==df['review'].max()])
+        print("\naverage scraped laptops\n", (round(df['storage_capacity'].sum() / len(result['laptops'])), 1))
         # write to pdf
-        to_pdf(most_expensive=most_expensive, most_review=most_review)
+        to_pdf(df, 
+               most_expensive=most_expensive, 
+               most_review=most_review, 
+               average_storage_capacity=round(df['storage_capacity'].sum() / len(result['laptops']), 1)
+        )
         break
     
     # click action on load more button 
