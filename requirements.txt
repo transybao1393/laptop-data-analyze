@@ -1,2 +1,5 @@
 bs4
 selenium
+md2pdf
+pandas
+reportlab
