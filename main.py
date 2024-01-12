@@ -36,13 +36,14 @@ def to_pdf(df: pd.DataFrame, most_expensive: pd.DataFrame, most_review: pd.DataF
         
         # add to elements array
         elements = []
-        elements.append(Paragraph("All"))
-        elements.append(df_table)
+        elements.append(Paragraph("Average storage capacity of all scraped laptops: " + str(average_storage_capacity) + "GB"))
+        # elements.append(Paragraph("All"))
+        # elements.append(df_table)
         elements.append(Paragraph("Most expensive"))
         elements.append(most_expensive_table)
         elements.append(Paragraph("Most review"))
         elements.append(most_review_table)
-        elements.append(Paragraph("Average storage capacity of all scraped laptops: " + str(average_storage_capacity) + "GB"))
+        
 
         doc = SimpleDocTemplate("laptop_info.pdf", pagesize=A4)
         doc.build(elements)
