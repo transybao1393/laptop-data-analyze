@@ -17,7 +17,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import cm
 from reportlab.platypus.paragraph import Paragraph
 
-def to_pdf(df: pd.DataFrame, most_expensive: pd.DataFrame, most_review: pd.DataFrame):
+def to_pdf(most_expensive: pd.DataFrame, most_review: pd.DataFrame):
     try:
         # styling        
         table_style = TableStyle([
@@ -26,10 +26,8 @@ def to_pdf(df: pd.DataFrame, most_expensive: pd.DataFrame, most_review: pd.DataF
         )
 
         # build table
-        t1 = Table(np.array(df).tolist())
         most_expensive_table = Table(np.array(most_expensive).tolist())
         most_review_table = Table(np.array(most_review).tolist())
-        # t1.setStyle(table_style)
         most_expensive_table.setStyle(table_style)
         most_review_table.setStyle(table_style)
         
@@ -37,10 +35,8 @@ def to_pdf(df: pd.DataFrame, most_expensive: pd.DataFrame, most_review: pd.DataF
         elements = []
         elements.append(Paragraph("Most expensive"))
         elements.append(most_expensive_table)
-        
         elements.append(Paragraph("Most review"))
         elements.append(most_review_table)
-        # elements.append(t1)
 
         doc = SimpleDocTemplate("laptop_info.pdf", pagesize=A4)
         doc.build(elements)
@@ -117,7 +113,7 @@ while True:
         print("\nlaptop with max price\n", df[df['price']==df['price'].max()])
         print("\nlaptop has max review\n", df[df['review']==df['review'].max()])
         # write to pdf
-        to_pdf(df, most_expensive=most_expensive, most_review=most_review)
+        to_pdf(most_expensive=most_expensive, most_review=most_review)
         break
     
     # click action on load more button 
